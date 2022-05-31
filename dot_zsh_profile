@@ -1,0 +1,4 @@
+# Source Reload
+alias reload.zsh="source ~/.zshrc"
+alias reload.profile="source ~/.zsh_profile"
+alias reload.term="source ~/.zsh_profile && source ~/.zshrc"
