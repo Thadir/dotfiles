@@ -88,6 +88,8 @@ source $ZSH/oh-my-zsh.sh
 
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
+#Load powerline could be difrent per env. should figure this out later.
+. /usr/local/lib/python3.9/site-packages/powerline/bindings/zsh/powerline.zsh
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
@@ -97,4 +99,4 @@ source $ZSH/oh-my-zsh.sh
 if [ -f ~/.zsh_profile ]; then 
        echo Loading profile
 	. ~/.zsh_profile;
-fil
+fi
