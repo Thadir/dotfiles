@@ -1,0 +1,73 @@
+# Official Amazon AWS command-line interface
+brew "awscli"
+# Bash Automated Testing System
+brew "bats-core"
+# Manage your dotfiles across multiple diverse machines, securely
+brew "chezmoi"
+# GNU File, Shell, and Text utilities
+brew "coreutils"
+# Reimplementation of ctags(1)
+brew "ctags"
+# GitHub command-line tool
+brew "gh"
+# Distributed revision control system
+brew "git"
+# Open-source GitLab command-line tool
+brew "glab"
+# Java-based project management
+brew "maven"
+# Simple tool to make locally trusted development certificates
+brew "mkcert"
+# Open-source, cross-platform JavaScript runtime environment
+brew "node"
+# Swiss-army knife of markup format conversion
+brew "pandoc"
+# Execute binaries from Python packages in isolated environments
+brew "pipx"
+# Search tool like grep and The Silver Searcher
+brew "ripgrep"
+# Utility that provides fast incremental file transfer
+brew "rsync"
+# Work with remote images registries
+brew "skopeo"
+# Launcher to analyze a project with SonarQube
+brew "sonar-scanner"
+# Cross-shell prompt for astronauts
+brew "starship"
+# Tool to build, change, and version infrastructure
+brew "terraform"
+# Vulnerability scanner for container images, file systems, and Git repos
+brew "trivy"
+# Generator for LS_COLORS with support for multiple color themes
+brew "vivid"
+# Convert HTML to PDF
+brew "weasyprint"
+# UNIX shell (command interpreter)
+brew "zsh"
+# Additional completion definitions for zsh
+brew "zsh-completions"
+# Brings the power of Copilot coding agent directly to your terminal
+cask "copilot-cli"
+cask "font-jetbrains-mono-nerd-font"
+# Simple application that will prevent iTunes or Apple Music from launching
+cask "notunes"
+vscode "amazonwebservices.aws-toolkit-vscode"
+vscode "betajob.modulestf"
+vscode "dannysteenman.aws-terraform-extension-pack"
+vscode "dannysteenman.iam-actions-snippets"
+vscode "dannysteenman.iam-service-principal-snippets"
+vscode "hashicorp.terraform"
+vscode "ms-python.debugpy"
+vscode "ms-python.python"
+vscode "ms-python.vscode-pylance"
+vscode "ms-python.vscode-python-envs"
+vscode "ms-vscode.powershell"
+vscode "redhat.java"
+vscode "vscjava.vscode-gradle"
+vscode "vscjava.vscode-java-debug"
+vscode "vscjava.vscode-java-dependency"
+vscode "vscjava.vscode-java-pack"
+vscode "vscjava.vscode-java-test"
+vscode "vscjava.vscode-maven"
+npm "@gitlab/duo-cli"
+npm "npm-check-updates"

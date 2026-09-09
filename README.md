@@ -26,6 +26,8 @@ conditional).
 | `~/.config/starship-gen.py` | `dot_config/starship-gen.py` | Generates `starship.toml`; injects Nerd Font glyphs via `chr()` because editors drop them. Run it, then `starship print-config 2>&1 \| grep -iE 'warn\|error'`. |
 | `~/.gitconfig` | `dot_gitconfig.tmpl` | Work identity by default; `includeIf` switches to the personal account per directory (see “New machine” and `dot_config/git/`). |
 | `~/.config/git/{personal,work}.inc` | `*.inc.tmpl` | Per-account identity + an `insteadOf` rule that routes `git@github.com:` through that account's SSH host alias. |
+| `~/.config/homebrew/Brewfile` | `dot_config/homebrew/Brewfile` | Every explicitly-installed formula, cask, VS Code extension and global npm package. Regenerate with `brew bundle dump --force --file=~/.config/homebrew/Brewfile`. |
+| _(script)_ | `.chezmoiscripts/run_onchange_after_10-darwin-brew-bundle.sh.tmpl` | macOS only. Installs Homebrew if missing, then runs `brew bundle` — re-runs automatically whenever the Brewfile changes. |
 | `~/Library/…/ghostty/config.ghostty` | `private_Library/…` | Ghostty terminal: `font-family = "JetBrainsMono Nerd Font Mono"` (must be the exact family name the terminal exposes), `grapheme-width-method = legacy`, Catppuccin auto light/dark. |
 
 <br>

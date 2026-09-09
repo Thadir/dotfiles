@@ -1,0 +1,19 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Re-runs whenever the Brewfile changes.
+# Brewfile sha256: {{ include "dot_config/homebrew/Brewfile" | sha256sum }}
+
+if ! command -v brew >/dev/null 2>&1; then
+  echo ">> Installing Homebrew"
+  NONINTERACTIVE=1 /bin/bash -c \
+    "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv)"
+
+echo ">> brew bundle"
+brew bundle --file=/dev/stdin <<'BREWFILE'
+{{ include "dot_config/homebrew/Brewfile" }}
+BREWFILE
+{{ end -}}
