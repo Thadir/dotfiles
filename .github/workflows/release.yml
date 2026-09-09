@@ -1,0 +1,73 @@
+name: release
+
+# On merge to main, bump the MAJOR.MINOR.PATCH tag. The bump level comes from
+# the merged PR: a "major" / "minor" / "patch" word in the PR title, or a
+# label of the same name. Default is patch. Also accepts a leading
+# conventional-commit type: "feat:" -> minor, "fix:"/"chore:"/"docs:" -> patch,
+# a "!" after the type or "BREAKING CHANGE" -> major.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: v
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          shopt -s nocasematch
+
+          bump=patch
+          if   [[ ",$LABELS," == *,major,* || "$TITLE" =~ (^|[^[:alpha:]])(major|breaking)([^[:alpha:]]|$) || "$TITLE" =~ ^[a-z]+(\(.+\))?! || "$BODY" == *"BREAKING CHANGE"* ]]; then
+            bump=major
+          elif [[ ",$LABELS," == *,minor,* || "$TITLE" =~ (^|[^[:alpha:]])minor([^[:alpha:]]|$) || "$TITLE" =~ ^feat(\(.+\))?: ]]; then
+            bump=minor
+          elif [[ ",$LABELS," == *,patch,* || "$TITLE" =~ (^|[^[:alpha:]])patch([^[:alpha:]]|$) || "$TITLE" =~ ^(fix|chore|docs|refactor|perf|build|ci|style|test)(\(.+\))?: ]]; then
+            bump=patch
+          fi
+
+          latest=$(git tag --list --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
+          latest=${latest:-0.0.0}
+          IFS=. read -r MA MI PA <<< "$latest"
+          case $bump in
+            major) MA=$((MA + 1)); MI=0; PA=0 ;;
+            minor) MI=$((MI + 1)); PA=0 ;;
+            patch) PA=$((PA + 1)) ;;
+          esac
+          next="${MA}.${MI}.${PA}"
+
+          echo "bump=$bump"       >> "$GITHUB_OUTPUT"
+          echo "latest=$latest"   >> "$GITHUB_OUTPUT"
+          echo "next=$next"       >> "$GITHUB_OUTPUT"
+          echo "## $latest -> **$next** ($bump)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEXT: ${{ steps.v.outputs.next }}
+          BUMP: ${{ steps.v.outputs.bump }}
+          TITLE: ${{ github.event.pull_request.title }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$NEXT" -m "$NEXT ($BUMP) — $TITLE (#$PR)"
+          git push origin "$NEXT"
+          gh release create "$NEXT" --title "$NEXT" --generate-notes
