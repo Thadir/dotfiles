@@ -1,0 +1,3 @@
+# Files in the source dir that are NOT dotfiles to deploy.
+README.md
+LICENSE

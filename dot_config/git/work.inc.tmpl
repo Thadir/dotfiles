@@ -1,0 +1,8 @@
+# Work GitHub account. Included by ~/.gitconfig for the work project dirs.
+# (Work is also the global default in ~/.gitconfig; this mainly pins the key.)
+[user]
+	name = {{ .name }}
+	email = {{ .email_work }}
+
+[url "git@{{ .ssh_host_work }}:"]
+	insteadOf = git@github.com:

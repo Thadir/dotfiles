@@ -1,0 +1,21 @@
+[user]
+	name = {{ .name }}
+	email = {{ .email_work }}
+[core]
+	editor = vim
+	pager = cat
+	filemode = false
+	autocrlf = input
+
+# --- Per-directory account separation -------------------------------------
+# Default (above) is the work account. These override identity + SSH key by
+# location. Trailing slash = the whole subtree. Later match wins, so a repo
+# under two rules takes the last one listed. Directory lists come from
+# ~/.config/chezmoi/chezmoi.toml (personal_dirs / work_dirs, under projects_root).
+{{ $root := .projects_root -}}
+{{ range (splitList "," .personal_dirs) }}[includeIf "gitdir:{{ $root }}/{{ . }}/"]
+	path = ~/.config/git/personal.inc
+{{ end -}}
+{{ range (splitList "," .work_dirs) }}[includeIf "gitdir:{{ $root }}/{{ . }}/"]
+	path = ~/.config/git/work.inc
+{{ end -}}

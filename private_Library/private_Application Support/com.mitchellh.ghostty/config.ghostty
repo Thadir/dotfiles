@@ -1,0 +1,29 @@
+# Nerd Font — carries the Powerline / git glyphs used by the Starship prompt.
+# IMPORTANT: this must be the family name Ghostty actually exposes, which for
+# this install is "JetBrainsMono Nerd Font Mono" (check with `ghostty
+# +list-fonts | grep -i jetbrains`). The plain name "JetBrainsMono Nerd Font"
+# does NOT match here — Ghostty then silently falls back to a non-Nerd font
+# and every Powerline glyph (U+E0Bx) renders as a blank box. That was the
+# actual cause of the "uncolored gaps" in the prompt, not a width-method bug.
+font-family = "JetBrainsMono Nerd Font Mono"
+
+font-size = 15
+
+# Keep zsh's and Ghostty's width math in agreement. zsh computes prompt width
+# with the legacy wcswidth method; Ghostty's default "unicode" method can
+# disagree for Powerline glyphs. Harmless to keep even now that the font name
+# is fixed, and it's the generally recommended setting for Powerline prompts.
+grapheme-width-method = legacy
+
+# Auto-switches with macOS appearance
+theme = dark:Catppuccin Frappe,light:Catppuccin Latte
+
+background-opacity = 0.95
+window-padding-x = 8
+window-padding-y = 6
+cursor-style = bar
+cursor-style-blink = false
+window-decoration = auto
+
+# Bytes — there's no "unlimited" option
+scrollback-limit = 100000000

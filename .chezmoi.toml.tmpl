@@ -1,0 +1,20 @@
+{{- $name           := promptStringOnce . "name" "Full name for work commits" -}}
+{{- $emailWork       := promptStringOnce . "email_work" "Work email" -}}
+{{- $namePersonal    := promptStringOnce . "name_personal" "Personal name / GitHub handle" -}}
+{{- $emailPersonal   := promptStringOnce . "email_personal" "Personal email" -}}
+{{- $sshHostWork     := promptStringOnce . "ssh_host_work" "SSH host alias for the work GitHub account (see ~/.ssh/config)" "github.com-work" -}}
+{{- $sshHostPersonal := promptStringOnce . "ssh_host_personal" "SSH host alias for the personal GitHub account" "github.com-personal" -}}
+{{- $projectsRoot    := promptStringOnce . "projects_root" "Projects root directory" "~/projects" -}}
+{{- $personalDirs    := promptStringOnce . "personal_dirs" "Comma-separated subdirs of the projects root that use the PERSONAL account" "personal" -}}
+{{- $workDirs        := promptStringOnce . "work_dirs" "Comma-separated subdirs that use the WORK account" "work" -}}
+
+[data]
+    name              = {{ $name | quote }}
+    email_work        = {{ $emailWork | quote }}
+    name_personal     = {{ $namePersonal | quote }}
+    email_personal    = {{ $emailPersonal | quote }}
+    ssh_host_work     = {{ $sshHostWork | quote }}
+    ssh_host_personal = {{ $sshHostPersonal | quote }}
+    projects_root     = {{ $projectsRoot | quote }}
+    personal_dirs     = {{ $personalDirs | quote }}
+    work_dirs         = {{ $workDirs | quote }}

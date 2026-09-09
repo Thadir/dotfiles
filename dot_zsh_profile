@@ -1,0 +1,134 @@
+# ~/.zsh_profile
+#
+# Personal, interactive-shell customizations: aliases, colors, and completion
+# styling. This is NOT a standard zsh startup file (that would be ~/.zprofile,
+# which is unused here) — it's a plain script sourced explicitly by ~/.zshrc,
+# after oh-my-zsh loads. Anything here that shells out to a Homebrew-installed
+# binary (gls, vivid, ...) relies on `brew shellenv` already having run, which
+# ~/.zshrc does at the very top, before this file is sourced.
+
+# --- Dependency check: brew, vivid, coreutils (gls) ---
+# Runs once per interactive shell. Silent when everything is already
+# installed (the common case: a couple of `command -v` checks). Otherwise
+# prompts before installing anything — never installs unattended. Only
+# prompts in interactive shells, so scripts/non-interactive sourcing skip it.
+_zsh_profile_ensure_tools() {
+  [[ -o interactive ]] || return 0
+
+  if ! command -v brew >/dev/null 2>&1; then
+    print -P "%F{yellow}Homebrew not found (needed for vivid + coreutils/gls).%f"
+    if read -q "?Install Homebrew now? [y/N] "; then
+      echo
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
+        echo "Homebrew install failed; skipping vivid/coreutils check."
+        return 1
+      }
+      if [ -x /opt/homebrew/bin/brew ]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+      elif [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+      fi
+    else
+      echo
+      echo "Skipping Homebrew install; vivid/gls checks skipped too."
+      return 0
+    fi
+  fi
+
+  local missing=()
+  command -v vivid >/dev/null 2>&1 || missing+=("vivid")
+  command -v gls   >/dev/null 2>&1 || missing+=("coreutils")
+
+  if (( ${#missing[@]} )); then
+    print -P "%F{yellow}Missing brew packages: ${missing[*]}%f"
+    if read -q "?Install with brew now? [y/N] "; then
+      echo
+      brew install "${missing[@]}"
+    else
+      echo
+    fi
+  fi
+}
+_zsh_profile_ensure_tools
+unfunction _zsh_profile_ensure_tools
+
+# --- Editor ---
+# Used by git, `fc`, the edit aliases below, etc. Terminal editor as the
+# portable default; GUI editor as $VISUAL when VS Code's `code` is on PATH.
+export EDITOR="vim"
+command -v code >/dev/null 2>&1 && export VISUAL="code --wait"
+
+# Reload helpers, so editing either file doesn't require a new terminal
+alias reload.zsh="source ~/.zshrc"
+alias reload.profile="source ~/.zsh_profile"
+alias reload.term="source ~/.zsh_profile && source ~/.zshrc"
+
+# Quick-edit shortcuts for the zsh config itself ($VISUAL if set, else $EDITOR)
+alias zshconfig='${VISUAL:-$EDITOR} ~/.zshrc ~/.zsh_profile'
+alias ohmyzsh='${VISUAL:-$EDITOR} ~/.oh-my-zsh'
+
+# Project navigation shortcut
+alias goPR="cd $HOME/projects"
+
+# GNU `ls`: use coreutils' `gls` when present (macOS: `brew install coreutils`),
+# otherwise the system `ls` is already GNU (most Linux / WSL) so use it directly.
+# oh-my-zsh's "gnu-utils" plugin also hashes a bare `ls` -> `gls`; this explicit
+# alias wins and pins our flags (-a = always show dotfiles).
+if command -v gls >/dev/null 2>&1; then
+  alias ls="gls -a --color=auto"
+else
+  alias ls="ls -a --color=auto"
+fi
+
+# Colorize grep and seed LS_COLORS from ~/.dircolors if present, else GNU
+# dircolors' built-in defaults. `dircolors` ships with macOS and GNU coreutils.
+if command -v dircolors >/dev/null 2>&1; then
+  test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+  alias grep='grep --color=auto'
+  alias fgrep='fgrep --color=auto'
+  alias egrep='egrep --color=auto'
+fi
+
+# More `ls` shortcuts: ll = long listing, l = compact column listing
+alias ll='ls -aalFA'
+alias l='ls -aCF'
+
+# Prefer vivid's LS_COLORS over dircolors' above, when vivid is installed
+# (`brew install vivid`). "catppuccin-frappe" is a mid-contrast dark theme that
+# matches the terminal's dark appearance; swap for another via `vivid themes`.
+# Falls back silently to whatever dircolors set if vivid is missing.
+command -v vivid >/dev/null 2>&1 && export LS_COLORS="$(vivid generate catppuccin-frappe)"
+
+# pip3 is what's actually installed; alias the common short name to it
+alias pip="pip3"
+
+# --- Tab-completion (compsys) styling ---
+# Note: these zstyles must come after LS_COLORS is set above, since
+# 'list-colors' reads it once at definition time.
+
+# Let arrow keys cycle through a menu of completion candidates
+zstyle ':completion:*' menu select
+
+# Color completion listings (e.g. `ls <TAB>`) using the same LS_COLORS
+# http://linuxshellaccount.blogspot.com/2008/12/color-completion-using-zsh-modules-on.html
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+
+# Formatting for completion group headers / messages / warnings / corrections
+# http://www.masterzen.fr/2009/04/19/in-love-with-zsh-part-one/
+zstyle ':completion:*' verbose yes
+zstyle ':completion:*:descriptions' format "$fg[yellow]%B--- %d%b"
+zstyle ':completion:*:messages' format '%d'
+zstyle ':completion:*:warnings' format "$fg[red]No matches for:$reset_color %d"
+zstyle ':completion:*:corrections' format '%B%d (errors: %e)%b'
+# Don't prefix each group of matches with its group name
+zstyle ':completion:*' group-name ''
+
+# --- PATH additions ---
+# JetBrains Toolbox-installed CLI launchers
+export PATH="$PATH:/usr/local/bin"
+# pipx-installed apps (created by `pipx` on 2024-08-05)
+export PATH="$PATH:$HOME/.local/bin"
+
+# NOTE: Homebrew's `brew shellenv` used to be auto-appended here by the
+# installer. It's consolidated at the top of ~/.zshrc instead, since it must
+# run before this file's gls/vivid lines, not after them.
