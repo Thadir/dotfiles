@@ -1,0 +1,117 @@
+name: lint
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          set -euxo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq zsh          # sc binary already on the runner
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+          ACTIONLINT=1.7.7
+          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT}/actionlint_${ACTIONLINT}_linux_amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin actionlint
+          GITLEAKS=8.28.0
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS}/gitleaks_${GITLEAKS}_linux_x64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin gitleaks
+
+      - name: gitleaks (secret scan)
+        run: gitleaks dir . --no-banner --redact --verbose
+
+      - name: Seed chezmoi test data
+        run: |
+          mkdir -p "$HOME/.config/chezmoi"
+          cat > "$HOME/.config/chezmoi/chezmoi.toml" <<'EOF'
+          [data]
+              name              = "CI"
+              email_work        = "ci@example.invalid"
+              name_personal     = "ci"
+              email_personal    = "ci@example.invalid"
+              ssh_host_work     = "github.com-work"
+              ssh_host_personal = "github.com-personal"
+              projects_root     = "~/projects"
+              personal_dirs     = "work,personal"
+              work_dirs         = "work,personal"
+          EOF
+
+      - name: actionlint
+        run: actionlint -color
+
+      - name: chezmoi templates parse
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          # config template: needs --init so prompt* funcs exist
+          chezmoi execute-template --init --source . < .chezmoi.toml.tmpl > /dev/null
+          # everything else: plain render against the seeded data
+          rc=0
+          while IFS= read -r f; do
+            if [ "$f" = ".chezmoi.toml.tmpl" ]; then continue; fi  # handled above (needs --init)
+            echo "::group::$f"
+            chezmoi execute-template --source . < "$f" > /dev/null || rc=1
+            echo "::endgroup::"
+          done < <(git ls-files '*.tmpl')
+          exit "$rc"
+
+      - name: shellcheck (rendered scripts)
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          rc=0
+          while IFS= read -r f; do
+            echo "::group::$f"
+            # Strip whole-line template directives so the OS guard doesn't blank
+            # the script on the Linux runner, then check the shell that's left.
+            sed -E '/^[[:space:]]*\{\{-?.*-?\}\}[[:space:]]*$/d' "$f" \
+              | shellcheck -x -s bash - || rc=1
+            echo "::endgroup::"
+          done < <(git ls-files '.chezmoiscripts/*.sh.tmpl')
+          exit "$rc"
+
+      - name: zsh syntax
+        run: |
+          set -euo pipefail
+          for f in dot_zshrc dot_zsh_profile private_dot_zsh_secrets; do
+            [ -f "$f" ] || continue
+            echo "zsh -n $f"
+            zsh -n "$f"
+          done
+
+      - name: python
+        run: |
+          set -euo pipefail
+          f=$(git ls-files '*starship-gen.py')
+          python3 -m py_compile "$f"
+          pipx run ruff check --select E9,F "$f"
+
+      - name: toml valid
+        run: |
+          set -euo pipefail
+          python3 - <<'EOF'
+          import glob, sys, tomllib
+          bad = 0
+          for p in glob.glob("**/*.toml", recursive=True):
+              try:
+                  with open(p, "rb") as fh:
+                      tomllib.load(fh)
+                  print("ok  ", p)
+              except (OSError, tomllib.TOMLDecodeError) as e:
+                  print("FAIL", p, e)
+                  bad = 1
+          sys.exit(bad)
+          EOF

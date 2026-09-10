@@ -6,6 +6,8 @@ editors, so change THIS file and re-run:  python3 ~/.config/starship-gen.py
 Validate:  starship print-config 2>&1 | grep -iE 'warn|error'
 """
 
+import os
+
 # --- glyphs ----------------------------------------------------------------
 HARD_R = chr(0xE0B0)  #  right-pointing filled triangle   left-bar end (points at cursor)
 HARD_L = chr(0xE0B2)  #  left-pointing filled triangle     right-bar nose (points at cursor)
@@ -168,7 +170,6 @@ added_style = "fg:#8CE05A bg:{BAR}"
 deleted_style = "fg:#F26D75 bg:{BAR}"
 '''
 
-import os
 out = os.path.expanduser("~/.config/starship.toml")
 with open(out, "w", encoding="utf-8") as f:
     f.write(TOML)
