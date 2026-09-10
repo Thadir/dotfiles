@@ -23,7 +23,7 @@ conditional).
 | `~/.zsh_profile` | `dot_zsh_profile` | Personal aliases, `LS_COLORS` (via `vivid`), completion styling, PATH extras, and a dependency check that offers to install `brew` + `vivid` + `coreutils`. |
 | `~/.zsh_secrets` | `private_dot_zsh_secrets` | Pulls secrets from the OS keychain at startup. **Contains no secret values.** `chmod 600`. |
 | `~/.config/starship.toml` | `dot_config/starship.toml` | Prompt config. **Generated — do not hand-edit.** |
-| `~/.config/starship-gen.py` | `dot_config/starship-gen.py` | Generates `starship.toml`; injects Nerd Font glyphs via `chr()` because editors drop them. Run it, then `starship print-config 2>&1 \| grep -iE 'warn\|error'`. |
+| `~/.config/starship-gen.py` | `dot_config/starship-gen.py` | Generates `starship.toml`; injects Nerd Font glyphs via `chr()` because editors drop them. Run bare to write the live config, or pass a path / set `STARSHIP_TOML_OUT` to render elsewhere first. Then `starship print-config 2>&1 \| grep -iE 'warn\|error'`. |
 | `~/.gitconfig` | `dot_gitconfig.tmpl` | Work identity by default; `includeIf` switches to the personal account per directory (see “New machine” and `dot_config/git/`). |
 | `~/.config/git/{personal,work}.inc` | `*.inc.tmpl` | Per-account identity + an `insteadOf` rule that routes `git@github.com:` through that account's SSH host alias. |
 | `~/.config/homebrew/Brewfile` | `dot_config/homebrew/Brewfile` | Every explicitly-installed formula, cask, VS Code extension and global npm package. Regenerate with `brew bundle dump --force --file=~/.config/homebrew/Brewfile`. |
@@ -84,13 +84,22 @@ yellow reminder line.
 <br>
 
 - **Left bar** (always shown): `host ⟩ user  directory` — seamless
-  powerline blocks, `` end pointing at the cursor.
+  powerline blocks, `` end pointing at the cursor. A padlock ()
+  prefixes the host block when the session is privileged (SSH or root),
+  driven by `$STARSHIP_PRIV` which `~/.zshrc` sets once at startup.
 
 - **Right bar** (contextual): a pinned `` nose, then `cmd_duration`,
   language versions (node / go / rust / python), `aws`,
-  `kubernetes` (k8s directories only), git state, exit code, and
-  git branch + status + line metrics — each shown only when it has
+  `kubernetes` (k8s directories only), git state, git branch + status +
+  line metrics, and — at the far right — a solid **red block** with the
+  exit code when the last command failed. Each shown only when it has
   something to say.
+
+- **Glyphs** are all Nerd Font (Powerline / Font Awesome) or plain ASCII —
+  no emoji, no East-Asian-ambiguous-width symbols in the always-shown
+  parts. That keeps zsh's width math and the terminal's in agreement, so
+  the prompt doesn't stack or smear on redraw / window resize (the usual
+  culprit is an emoji that's 1 cell to zsh but 2 in the terminal).
 
 <br>
 
