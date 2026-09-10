@@ -1,0 +1,12 @@
+# Employer (Sogeti / Capgemini corporate) identity.
+# Included by ~/.gitconfig for the directories in `employer_dirs`.
+[user]
+	name = {{ .name_employer }}
+	email = {{ .email_employer }}
+[github]
+	user = {{ .name_employer }}
+
+# Route plain github.com SSH URLs through the employer host alias (defined in
+# ~/.ssh/config, which selects the matching key).
+[url "git@{{ .ssh_host_employer }}:"]
+	insteadOf = git@github.com:

@@ -24,8 +24,9 @@ conditional).
 | `~/.zsh_secrets` | `private_dot_zsh_secrets` | Pulls secrets from the OS keychain at startup. **Contains no secret values.** `chmod 600`. |
 | `~/.config/starship.toml` | `dot_config/starship.toml` | Prompt config. **Generated — do not hand-edit.** |
 | `~/.config/starship-gen.py` | `dot_config/starship-gen.py` | Generates `starship.toml`; injects Nerd Font glyphs via `chr()` because editors drop them. Run bare to write the live config, or pass a path / set `STARSHIP_TOML_OUT` to render elsewhere first. Then `starship print-config 2>&1 \| grep -iE 'warn\|error'`. |
-| `~/.gitconfig` | `dot_gitconfig.tmpl` | Work identity by default; `includeIf` switches to the personal account per directory (see “New machine” and `dot_config/git/`). |
-| `~/.config/git/{personal,work}.inc` | `*.inc.tmpl` | Per-account identity + an `insteadOf` rule that routes `git@github.com:` through that account's SSH host alias. |
+| `~/.gitconfig` | `dot_gitconfig.tmpl` | **Personal identity is the default.** `includeIf` switches to the employer / EMU / customer account per directory (see [Git identities](#git-identities)). |
+| `~/.config/git/{employer,emu}.inc` | `*.inc.tmpl` | Employer and Capgemini-EMU identity + an `insteadOf` rule routing `git@github.com:` through that account's SSH host alias. |
+| `~/.config/git/customer-<slug>.inc` | _(generated)_ | One per `[[data.customer]]` in `chezmoi.toml`, written by `run_onchange_after_20-git-customer-includes.sh`. Stale ones are removed. |
 | `~/.config/homebrew/Brewfile` | `dot_config/homebrew/Brewfile` | Every explicitly-installed formula, cask, VS Code extension and global npm package. Regenerate with `brew bundle dump --force --file=~/.config/homebrew/Brewfile`. |
 | _(script)_ | `.chezmoiscripts/run_onchange_after_10-darwin-brew-bundle.sh.tmpl` | macOS only. Installs Homebrew if missing, then runs `brew bundle` — re-runs automatically whenever the Brewfile changes. |
 | `~/Library/…/ghostty/config.ghostty` | `private_Library/…` | Ghostty terminal: `font-family = "JetBrainsMono Nerd Font Mono"` (must be the exact family name the terminal exposes), `grapheme-width-method = legacy`, Catppuccin auto light/dark. |
@@ -45,13 +46,28 @@ them (`.chezmoi.toml.tmpl`) and writes them to `~/.config/chezmoi/chezmoi.toml`.
 
 <br>
 
+Prerequisites (Linux / WSL): `git`, `curl`, `zsh`, and `~/.ssh/config` with the
+host aliases and keys you'll enter at the prompts (`github.com-personal`,
+`github.com-sogeti`, `github.com-cgemu`, …). macOS has git/curl/zsh already.
+
+<br>
+
 ```sh
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply Thadir
 ```
 
-`chezmoi init` prompts for identity + email (work and personal), the two SSH
-host aliases, and which `~/projects` subdirs belong to each account, and
-writes them to `~/.config/chezmoi/chezmoi.toml` (never committed).
+`chezmoi init` prompts for the **personal**, **employer** and **Capgemini EMU**
+identities (name / email / SSH host alias), the projects root, and which
+`~/projects` subdirs use the employer and EMU accounts. Answers are written to
+`~/.config/chezmoi/chezmoi.toml` (never committed). Customer accounts are added
+afterwards — see [Git identities](#git-identities).
+
+<br>
+
+On a machine already set up with the **old** single-`work` config, just re-run
+`chezmoi init` (no `--apply`): the new prompts pre-fill from the old values, and
+you only answer the genuinely new ones (the EMU email, mostly). Then
+`chezmoi apply`.
 
 <br>
 
@@ -72,6 +88,67 @@ secret-tool store --label='github token' service github_token
 
 Open a fresh shell. Until the token is stored, every shell prints one
 yellow reminder line.
+
+<br>
+
+---
+
+<br>
+
+## Git identities
+
+<br>
+
+**Personal is the default.** A work identity never applies unless the repo sits
+under a directory you've mapped to it, so cloning something in a random
+directory commits as you, not as a customer.
+
+<br>
+
+| Identity | Applies to | Source |
+| --- | --- | --- |
+| **personal** | everything not matched below | inline in `~/.gitconfig` |
+| **employer** (Sogeti / Capgemini corporate) | `employer_dirs` subdirs of the projects root | `~/.config/git/employer.inc` |
+| **Capgemini EMU** (customer work via Capgemini) | `emu_dirs` subdirs | `~/.config/git/emu.inc` |
+| **customer `<slug>`** | that customer's directory | `~/.config/git/customer-<slug>.inc` (generated) |
+
+<br>
+
+`~/.gitconfig` and the `.inc` files are all generated from
+`~/.config/chezmoi/chezmoi.toml`. Check which identity a repo uses with
+`git -C <repo> config user.email`.
+
+<br>
+
+### Adding a customer account
+
+<br>
+
+Edit `~/.config/chezmoi/chezmoi.toml` and add a block per customer, then apply:
+
+<br>
+
+```toml
+[[data.customer]]
+    slug     = "acme"                 # also the directory name, and the .inc suffix
+    email    = "m.cremer@acme-ext.com"
+    # optional:
+    name     = "Martijn Cremer"       # defaults to the personal name
+    dir      = "~/work/acme"          # defaults to <projects_root>/<slug>
+    ssh_host = "github.com-acme"       # adds an insteadOf route; omit if not needed
+```
+
+<br>
+
+```sh
+chezmoi apply
+```
+
+<br>
+
+That regenerates `~/.gitconfig` (adds the `includeIf`) and writes
+`~/.config/git/customer-acme.inc`. Removing the block and re-applying deletes the
+`.inc` again. Edits to `chezmoi.toml` survive `chezmoi init`.
 
 <br>
 

@@ -1,21 +1,50 @@
+{{- $root := .projects_root -}}
+# ~/.gitconfig  (managed by chezmoi -- edit dot_gitconfig.tmpl, not this file)
+
+# --- Default identity: PERSONAL -----------------------------------------
+# Work identities are NEVER the default. If you clone something outside a
+# configured project directory you commit as yourself, not as a customer.
 [user]
-	name = {{ .name }}
-	email = {{ .email_work }}
+	name = {{ .name_personal }}
+	email = {{ .email_personal }}
+[github]
+	user = {{ .name_personal }}
+
+# Default SSH route: the personal host alias (see ~/.ssh/config), so remotes
+# can stay written as git@github.com:... and still use the personal key.
+[url "git@{{ .ssh_host_personal }}:"]
+	insteadOf = git@github.com:
+
 [core]
 	editor = vim
 	pager = cat
 	filemode = false
 	autocrlf = input
 
-# --- Per-directory account separation -------------------------------------
-# Default (above) is the work account. These override identity + SSH key by
-# location. Trailing slash = the whole subtree. Later match wins, so a repo
-# under two rules takes the last one listed. Directory lists come from
-# ~/.config/chezmoi/chezmoi.toml (personal_dirs / work_dirs, under projects_root).
-{{ $root := .projects_root -}}
-{{ range (splitList "," .personal_dirs) }}[includeIf "gitdir:{{ $root }}/{{ . }}/"]
-	path = ~/.config/git/personal.inc
+# --- Per-directory identity overrides ---------------------------------------
+# Trailing slash = the whole subtree. Later match wins, so a repo covered by
+# two rules takes the last one listed. Directory lists come from
+# ~/.config/chezmoi/chezmoi.toml.
+
+# Employer (Sogeti / Capgemini corporate)
+{{ range (splitList "," .employer_dirs) -}}
+{{ $d := trim . -}}
+{{ if $d -}}
+[includeIf "gitdir:{{ $root }}/{{ $d }}/"]
+	path = ~/.config/git/employer.inc
 {{ end -}}
-{{ range (splitList "," .work_dirs) }}[includeIf "gitdir:{{ $root }}/{{ . }}/"]
-	path = ~/.config/git/work.inc
+{{ end }}
+# Capgemini EMU (Enterprise Managed User) -- customer work routed via Capgemini
+{{ range (splitList "," .emu_dirs) -}}
+{{ $d := trim . -}}
+{{ if $d -}}
+[includeIf "gitdir:{{ $root }}/{{ $d }}/"]
+	path = ~/.config/git/emu.inc
+{{ end -}}
+{{ end }}
+# Customer-specific accounts (from [[data.customer]] in chezmoi.toml)
+{{ range (dig "customer" (list) .) -}}
+{{ $dir := dig "dir" (printf "%s/%s" $root .slug) . -}}
+[includeIf "gitdir:{{ $dir }}/"]
+	path = ~/.config/git/customer-{{ .slug }}.inc
 {{ end -}}

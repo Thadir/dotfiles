@@ -1,0 +1,11 @@
+# Capgemini EMU (Enterprise Managed User) identity.
+# Included by ~/.gitconfig for the directories in `emu_dirs` -- customer work
+# routed through Capgemini rather than through a customer-issued account.
+[user]
+	name = {{ .name_emu }}
+	email = {{ .email_emu }}
+[github]
+	user = {{ .name_emu }}
+
+[url "git@{{ .ssh_host_emu }}:"]
+	insteadOf = git@github.com:
