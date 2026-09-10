@@ -25,5 +25,12 @@ cursor-style = bar
 cursor-style-blink = false
 window-decoration = auto
 
+# A new tab opens in the home directory, not the current tab's working
+# directory. `working-directory = home` is what a tab falls back to once it no
+# longer inherits. Splits and new windows still inherit (you usually want to
+# stay where you are for those).
+working-directory = home
+tab-inherit-working-directory = false
+
 # Bytes — there's no "unlimited" option
 scrollback-limit = 100000000
