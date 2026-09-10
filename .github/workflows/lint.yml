@@ -43,13 +43,13 @@ jobs:
               ssh_host_personal = "github.com-personal"
               name_employer     = "ci-employer"
               email_employer    = "ci@employer.invalid"
-              ssh_host_employer = "github.com-sogeti"
+              ssh_host_employer = "github.com-work"
               name_emu          = "ci-emu"
               email_emu         = "ci@emu.invalid"
-              ssh_host_emu      = "github.com-cgemu"
+              ssh_host_emu      = "github.com-emu"
               projects_root     = "~/projects"
-              employer_dirs     = "sogeti"
-              emu_dirs          = "capgemini"
+              employer_dirs     = "work"
+              emu_dirs          = "emu"
 
           [[data.customer]]
               slug     = "acme"

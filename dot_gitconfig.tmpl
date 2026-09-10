@@ -26,7 +26,7 @@
 # two rules takes the last one listed. Directory lists come from
 # ~/.config/chezmoi/chezmoi.toml.
 
-# Employer (Sogeti / Capgemini corporate)
+# Employer / corporate
 {{ range (splitList "," .employer_dirs) -}}
 {{ $d := trim . -}}
 {{ if $d -}}
@@ -34,7 +34,7 @@
 	path = ~/.config/git/employer.inc
 {{ end -}}
 {{ end }}
-# Capgemini EMU (Enterprise Managed User) -- customer work routed via Capgemini
+# Enterprise Managed User (EMU) account
 {{ range (splitList "," .emu_dirs) -}}
 {{ $d := trim . -}}
 {{ if $d -}}
