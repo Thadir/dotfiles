@@ -33,29 +33,31 @@ jobs:
           set -euo pipefail
           shopt -s nocasematch
 
-          bump=patch
+          bump="patch"
           if   [[ ",$LABELS," == *,major,* || "$TITLE" =~ (^|[^[:alpha:]])(major|breaking)([^[:alpha:]]|$) || "$TITLE" =~ ^[a-z]+(\(.+\))?! || "$BODY" == *"BREAKING CHANGE"* ]]; then
-            bump=major
+            bump="major"
           elif [[ ",$LABELS," == *,minor,* || "$TITLE" =~ (^|[^[:alpha:]])minor([^[:alpha:]]|$) || "$TITLE" =~ ^feat(\(.+\))?: ]]; then
-            bump=minor
+            bump="minor"
           elif [[ ",$LABELS," == *,patch,* || "$TITLE" =~ (^|[^[:alpha:]])patch([^[:alpha:]]|$) || "$TITLE" =~ ^(fix|chore|docs|refactor|perf|build|ci|style|test)(\(.+\))?: ]]; then
-            bump=patch
+            bump="patch"
           fi
 
-          latest=$(git tag --list --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
-          latest=${latest:-0.0.0}
+          latest="$(git tag --list --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)"
+          latest="${latest:-0.0.0}"
           IFS=. read -r MA MI PA <<< "$latest"
-          case $bump in
+          case "$bump" in
             major) MA=$((MA + 1)); MI=0; PA=0 ;;
             minor) MI=$((MI + 1)); PA=0 ;;
             patch) PA=$((PA + 1)) ;;
           esac
           next="${MA}.${MI}.${PA}"
 
-          echo "bump=$bump"       >> "$GITHUB_OUTPUT"
-          echo "latest=$latest"   >> "$GITHUB_OUTPUT"
-          echo "next=$next"       >> "$GITHUB_OUTPUT"
-          echo "## $latest -> **$next** ($bump)" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "bump=$bump"
+            echo "latest=$latest"
+            echo "next=$next"
+          } >> "$GITHUB_OUTPUT"
+          echo "## \`$latest\` -> \`$next\` ($bump)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Tag and release
         env:

@@ -21,7 +21,7 @@ jobs:
         run: |
           set -euxo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y -qq zsh          # shellcheck is preinstalled on the runner
+          sudo apt-get install -y -qq zsh          # sc binary already on the runner
           sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
           ACTIONLINT=1.7.7
           curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT}/actionlint_${ACTIONLINT}_linux_amd64.tar.gz" \
@@ -61,12 +61,12 @@ jobs:
           # everything else: plain render against the seeded data
           rc=0
           while IFS= read -r f; do
-            [ "$f" = ".chezmoi.toml.tmpl" ] && continue   # handled above (needs --init)
+            if [ "$f" = ".chezmoi.toml.tmpl" ]; then continue; fi  # handled above (needs --init)
             echo "::group::$f"
             chezmoi execute-template --source . < "$f" > /dev/null || rc=1
             echo "::endgroup::"
           done < <(git ls-files '*.tmpl')
-          exit $rc
+          exit "$rc"
 
       - name: shellcheck (rendered scripts)
         run: |
@@ -81,7 +81,7 @@ jobs:
               | shellcheck -x -s bash - || rc=1
             echo "::endgroup::"
           done < <(git ls-files '.chezmoiscripts/*.sh.tmpl')
-          exit $rc
+          exit "$rc"
 
       - name: zsh syntax
         run: |
