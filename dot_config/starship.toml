@@ -12,27 +12,43 @@
 #   command line always sits between a "" and a "" -- it shows
 #   even when every status segment is empty. No colour-matched triangles
 #   between segments: that needs each to know its neighbours, which Starship
-#   can't express for segments that appear/disappear on their own. Order L->R:
+#   can't express for segments that appear/disappear on their own -- EXCEPT
+#   [status], which sits at the far right end (matching the old prompt) with
+#   every neighbour slate, so its red-block edge triangles are deterministic.
+#   Order L->R:
 #     cmd_duration  node/go/rust/python  aws  kubernetes  git-state
-#     exit-code  branch + status + line-metrics
+#     branch + status + line-metrics   exit-code(red block, last)
+#
+# A padlock () is prepended to the host block when the session is
+# privileged -- SSH or root. That is driven by $STARSHIP_PRIV, which ~/.zshrc
+# exports once at startup (SSH state and uid don't change mid-shell), so this
+# costs nothing per prompt.
 #
 # GLYPHS are Nerd Font PUA chars; they render only if the terminal font
 # resolves to a real Nerd Font by the EXACT name it exposes -- for Ghostty
 # here that is "JetBrainsMono Nerd Font Mono" (see the Ghostty config).
-# Check:  printf 'br   clk   node   go   rs   py   aws \n'
+# Check:  printf 'lock   x   br   clk   node   py \n'
 
 add_newline = false
 
 format = """
-[$hostname$username](bg:#434C5E fg:#ECEFF4)\
+[${env_var.STARSHIP_PRIV}$hostname$username](bg:#434C5E fg:#ECEFF4)\
 [](fg:#434C5E bg:#5E81AC)\
 [$directory$jobs](bg:#5E81AC fg:#ECEFF4)\
 [](bold fg:#5E81AC) """
 
 right_format = """[](bold fg:#3B4252)\
-$cmd_duration$nodejs$golang$rust$python$aws$kubernetes$git_state$status$git_branch$git_status$git_metrics"""
+$cmd_duration$nodejs$golang$rust$python$aws$kubernetes$git_state$git_branch$git_status$git_metrics$status"""
 
 # ================================================================= LEFT ====
+
+# Padlock on the host block for a privileged session. $STARSHIP_PRIV is set by
+# ~/.zshrc when $SSH_CONNECTION is set or the shell is root; unset otherwise, so
+# this whole module disappears with zero per-prompt cost.
+[env_var.STARSHIP_PRIV]
+variable = "STARSHIP_PRIV"
+format = "[ ]($style)"
+style = "bg:#434C5E fg:#EBCB8B"
 
 [hostname]
 ssh_only = false
@@ -49,10 +65,12 @@ style_root = "bg:#434C5E fg:#ECEFF4"
 
 [directory]
 disabled = false
-format = "[ $path]($style)[$read_only]($read_only_style)"
+format = "[ $path]($style)[ $read_only]($read_only_style)"
 style = "bg:#5E81AC fg:#ECEFF4"
+read_only = ""
+read_only_style = "bg:#5E81AC fg:#EBCB8B"
 truncation_length = 3
-truncation_symbol = "…/"
+truncation_symbol = ".../"
 
 [jobs]
 number_threshold = 1
@@ -107,11 +125,14 @@ format = "[ $state( $progress_current/$progress_total) ]($style)"
 style = "fg:#DDA9E4 bg:#3B4252 bold"
 
 [status]
+# Solid red block at the far-right end of the right bar. Neighbours are always
+# slate (#3B4252), so the "" edge triangles are deterministic:
+#   [slate -> red]  "  <code> "  [red -> terminal bg]
 disabled = false
 pipestatus = true
-format = "[ ✘ $status ]($style)"
-pipestatus_format = "[ ✘ $pipestatus=>$status ]($style)"
-style = "fg:#F26D75 bg:#3B4252 bold"
+format = "[](fg:#3B4252 bg:#BF616A)[  $status ]($style)[](fg:#BF616A)"
+pipestatus_format = "[](fg:#3B4252 bg:#BF616A)[  $pipestatus => $status ]($style)[](fg:#BF616A)"
+style = "fg:#ECEFF4 bg:#BF616A bold"
 
 [git_branch]
 format = "[  $branch ]($style)"
@@ -127,7 +148,7 @@ behind = "↓${count}"
 diverged = "↑${ahead_count}↓${behind_count}"
 staged = "●${count}"
 modified = "✚${count}"
-untracked = "…${count}"
+untracked = "?${count}"
 stashed = "⚑${count}"
 
 [git_metrics]

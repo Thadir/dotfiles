@@ -1,3 +1,7 @@
 # Files in the source dir that are NOT dotfiles to deploy.
 README.md
 LICENSE
+
+# Python bytecode cache created in ~/.config when starship-gen.py is run there.
+.config/__pycache__
+.config/**/__pycache__
