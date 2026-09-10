@@ -1,0 +1,49 @@
+#!/bin/sh
+# Materialise ~/.config/git/customer-<slug>.inc for every [[data.customer]] in
+# ~/.config/chezmoi/chezmoi.toml, and delete any customer include whose slug is
+# no longer listed. Re-runs whenever the customer list changes.
+#
+# customer-set hash: {{ dig "customer" (list) . | toJson | sha256sum }}
+set -eu
+
+dir="${HOME}/.config/git"
+mkdir -p "$dir"
+tab=$(printf '\t')
+
+# One TAB-separated record per customer: slug \t name \t email \t ssh_host
+# (ssh_host may be empty). Only this heredoc is templated; the logic is plain sh.
+records=$(cat <<'RECORDS'
+{{ range (dig "customer" (list) .) -}}
+{{ .slug }}	{{ dig "name" $.name_personal . }}	{{ .email }}	{{ dig "ssh_host" "" . }}
+{{ end -}}
+RECORDS
+)
+
+# Remove includes for slugs that are no longer configured.
+wanted=$(printf '%s\n' "$records" | awk -F"$tab" 'NF && $1 != "" {print $1}')
+for f in "$dir"/customer-*.inc; do
+	[ -e "$f" ] || continue
+	slug=$(basename "$f" .inc)
+	slug=${slug#customer-}
+	if ! printf '%s\n' "$wanted" | grep -qx "$slug"; then
+		echo "git identities: removing stale $f"
+		rm -f "$f"
+	fi
+done
+
+# Write the current set.
+printf '%s\n' "$records" | while IFS="$tab" read -r slug name email ssh_host; do
+	[ -n "$slug" ] || continue
+	{
+		echo "# Customer account: $slug  (managed by chezmoi -- see [[data.customer]])"
+		echo "[user]"
+		echo "	name = $name"
+		echo "	email = $email"
+		if [ -n "$ssh_host" ]; then
+			echo "[url \"git@$ssh_host:\"]"
+			echo "	insteadOf = git@github.com:"
+		fi
+	} > "$dir/customer-$slug.inc"
+	chmod 0644 "$dir/customer-$slug.inc"
+	echo "git identities: wrote $dir/customer-$slug.inc"
+done

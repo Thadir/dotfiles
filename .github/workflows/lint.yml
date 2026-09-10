@@ -38,15 +38,29 @@ jobs:
           mkdir -p "$HOME/.config/chezmoi"
           cat > "$HOME/.config/chezmoi/chezmoi.toml" <<'EOF'
           [data]
-              name              = "CI"
-              email_work        = "ci@example.invalid"
-              name_personal     = "ci"
-              email_personal    = "ci@example.invalid"
-              ssh_host_work     = "github.com-work"
+              name_personal     = "ci-personal"
+              email_personal    = "ci@personal.invalid"
               ssh_host_personal = "github.com-personal"
+              name_employer     = "ci-employer"
+              email_employer    = "ci@employer.invalid"
+              ssh_host_employer = "github.com-sogeti"
+              name_emu          = "ci-emu"
+              email_emu         = "ci@emu.invalid"
+              ssh_host_emu      = "github.com-cgemu"
               projects_root     = "~/projects"
-              personal_dirs     = "work,personal"
-              work_dirs         = "work,personal"
+              employer_dirs     = "sogeti"
+              emu_dirs          = "capgemini"
+
+          [[data.customer]]
+              slug     = "acme"
+              name     = "ci-acme"
+              email    = "ci@acme.invalid"
+              dir      = "~/projects/acme"
+              ssh_host = "github.com-acme"
+
+          [[data.customer]]
+              slug  = "globex"
+              email = "ci@globex.invalid"
           EOF
 
       - name: actionlint

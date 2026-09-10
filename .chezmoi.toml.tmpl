@@ -1,20 +1,62 @@
-{{- $name           := promptStringOnce . "name" "Full name for work commits" -}}
-{{- $emailWork       := promptStringOnce . "email_work" "Work email" -}}
-{{- $namePersonal    := promptStringOnce . "name_personal" "Personal name / GitHub handle" -}}
-{{- $emailPersonal   := promptStringOnce . "email_personal" "Personal email" -}}
-{{- $sshHostWork     := promptStringOnce . "ssh_host_work" "SSH host alias for the work GitHub account (see ~/.ssh/config)" "github.com-work" -}}
-{{- $sshHostPersonal := promptStringOnce . "ssh_host_personal" "SSH host alias for the personal GitHub account" "github.com-personal" -}}
-{{- $projectsRoot    := promptStringOnce . "projects_root" "Projects root directory" "~/projects" -}}
-{{- $personalDirs    := promptStringOnce . "personal_dirs" "Comma-separated subdirs of the projects root that use the PERSONAL account" "personal" -}}
-{{- $workDirs        := promptStringOnce . "work_dirs" "Comma-separated subdirs that use the WORK account" "work" -}}
+{{- /* Identity model:
+       - PERSONAL is the default for every repo. Work identities are never the
+         default -- you opt into them per directory.
+       - EMPLOYER  = your Sogeti / Capgemini corporate identity.
+       - EMU       = the Capgemini Enterprise Managed User, for customer work
+                     routed through Capgemini.
+       - CUSTOMER  = customer-specific accounts. Not prompted here; add
+                     [[data.customer]] blocks to ~/.config/chezmoi/chezmoi.toml
+                     (see README "Adding a customer account"), then chezmoi apply.
+                     Existing customer blocks are preserved across `chezmoi init`.
+*/ -}}
+{{- /* Fallbacks from the pre-identity-split key names, so `chezmoi init` on a
+       machine set up with the old config pre-fills instead of re-asking. */ -}}
+{{- $oldName      := dig "name"          "" . -}}
+{{- $oldEmailWork := dig "email_work"    "" . -}}
+{{- $oldSshWork   := dig "ssh_host_work" "github.com-sogeti" . -}}
+{{- $oldWorkDirs  := dig "work_dirs"     "sogeti" . -}}
+
+{{- $namePersonal    := promptStringOnce . "name_personal"     "Name on your PERSONAL commits" -}}
+{{- $emailPersonal   := promptStringOnce . "email_personal"    "Personal email" -}}
+{{- $sshHostPersonal := promptStringOnce . "ssh_host_personal" "SSH host alias for the personal GitHub account (see ~/.ssh/config)" "github.com-personal" -}}
+
+{{- $nameEmployer    := promptStringOnce . "name_employer"     "Name on EMPLOYER (Sogeti/Capgemini) commits" (or $oldName $namePersonal) -}}
+{{- $emailEmployer   := promptStringOnce . "email_employer"    "Employer email" $oldEmailWork -}}
+{{- $sshHostEmployer := promptStringOnce . "ssh_host_employer" "SSH host alias for the employer GitHub account" $oldSshWork -}}
+
+{{- $nameEmu         := promptStringOnce . "name_emu"          "Name on CAPGEMINI EMU commits" $nameEmployer -}}
+{{- $emailEmu        := promptStringOnce . "email_emu"         "Capgemini EMU email" -}}
+{{- $sshHostEmu      := promptStringOnce . "ssh_host_emu"      "SSH host alias for the Capgemini EMU account" "github.com-cgemu" -}}
+
+{{- $projectsRoot    := promptStringOnce . "projects_root"     "Projects root directory" "~/projects" -}}
+{{- $employerDirs    := promptStringOnce . "employer_dirs"     "Comma-separated subdirs of the projects root that use the EMPLOYER account" $oldWorkDirs -}}
+{{- $emuDirs         := promptStringOnce . "emu_dirs"          "Comma-separated subdirs that use the Capgemini EMU account" "capgemini" -}}
 
 [data]
-    name              = {{ $name | quote }}
-    email_work        = {{ $emailWork | quote }}
     name_personal     = {{ $namePersonal | quote }}
     email_personal    = {{ $emailPersonal | quote }}
-    ssh_host_work     = {{ $sshHostWork | quote }}
     ssh_host_personal = {{ $sshHostPersonal | quote }}
+
+    name_employer     = {{ $nameEmployer | quote }}
+    email_employer    = {{ $emailEmployer | quote }}
+    ssh_host_employer = {{ $sshHostEmployer | quote }}
+
+    name_emu          = {{ $nameEmu | quote }}
+    email_emu         = {{ $emailEmu | quote }}
+    ssh_host_emu      = {{ $sshHostEmu | quote }}
+
     projects_root     = {{ $projectsRoot | quote }}
-    personal_dirs     = {{ $personalDirs | quote }}
-    work_dirs         = {{ $workDirs | quote }}
+    employer_dirs     = {{ $employerDirs | quote }}
+    emu_dirs          = {{ $emuDirs | quote }}
+{{ range (dig "customer" (list) .) }}
+[[data.customer]]
+slug = {{ .slug | quote }}
+name = {{ (dig "name" $namePersonal .) | quote }}
+email = {{ .email | quote }}
+{{- $d := dig "dir" "" . }}{{ if $d }}
+dir = {{ $d | quote }}
+{{- end }}
+{{- $s := dig "ssh_host" "" . }}{{ if $s }}
+ssh_host = {{ $s | quote }}
+{{- end }}
+{{ end -}}

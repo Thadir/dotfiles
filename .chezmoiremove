@@ -1,0 +1,6 @@
+# Targets to delete from the machine on `chezmoi apply`.
+
+# Old git-identity include files (renamed: work.inc -> employer.inc; the
+# personal identity is now the inline default in ~/.gitconfig).
+.config/git/personal.inc
+.config/git/work.inc
