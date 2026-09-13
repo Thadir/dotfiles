@@ -38,10 +38,11 @@ _zsh_profile_ensure_tools() {
   local missing=()
   command -v vivid >/dev/null 2>&1 || missing+=("vivid")
   # gls is Homebrew coreutils' name for GNU ls, to avoid clashing with the
-  # system one on macOS. On Linux/WSL the system `ls` is already GNU (see the
-  # alias below), so only flag coreutils as missing when `ls` isn't GNU either.
+  # system one on macOS. On Linux/WSL the system `ls` is usually GNU, but some
+  # distros (e.g. Ubuntu 26.04+) ship uutils coreutils' `ls` instead, so accept
+  # either before flagging coreutils as missing.
   if ! command -v gls >/dev/null 2>&1; then
-    ls --version 2>/dev/null | grep -q GNU || missing+=("coreutils")
+    ls --version 2>/dev/null | grep -qE 'GNU|uutils' || missing+=("coreutils")
   fi
 
   if (( ${#missing[@]} )); then
