@@ -16,11 +16,11 @@ _zsh_profile_ensure_tools() {
   [[ -o interactive ]] || return 0
 
   if ! command -v brew >/dev/null 2>&1; then
-    print -P "%F{yellow}Homebrew not found (needed for vivid + coreutils/gls).%f"
+    print -P "%F{yellow}Homebrew not found (needed for starship + vivid + coreutils/gls).%f"
     if read -q "?Install Homebrew now? [y/N] "; then
       echo
       /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || {
-        echo "Homebrew install failed; skipping vivid/coreutils check."
+        echo "Homebrew install failed; skipping starship/vivid/coreutils check."
         return 1
       }
       if [ -x /opt/homebrew/bin/brew ]; then
@@ -30,12 +30,16 @@ _zsh_profile_ensure_tools() {
       fi
     else
       echo
-      echo "Skipping Homebrew install; vivid/gls checks skipped too."
+      echo "Skipping Homebrew install; starship/vivid/gls checks skipped too."
       return 0
     fi
   fi
 
   local missing=()
+  # starship is what renders the prompt (~/.zshrc, step 5) -- without it that
+  # step falls back to zsh's default prompt instead of crashing, but you want
+  # this installed.
+  command -v starship >/dev/null 2>&1 || missing+=("starship")
   command -v vivid >/dev/null 2>&1 || missing+=("vivid")
   # gls is Homebrew coreutils' name for GNU ls, to avoid clashing with the
   # system one on macOS. On Linux/WSL the system `ls` is usually GNU, but some
