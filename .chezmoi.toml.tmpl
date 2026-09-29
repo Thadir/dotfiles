@@ -4,6 +4,9 @@
        - EMPLOYER  = your main employer / corporate identity.
        - EMU       = a separate Enterprise Managed User account, if your
                      organisation issues you one for certain repositories.
+                     Optional -- leave the email blank to skip it entirely
+                     (e.g. on a customer-owned machine where that account
+                     should never be used).
        - CUSTOMER  = customer-specific accounts. Not prompted here; add
                      [[data.customer]] blocks to ~/.config/chezmoi/chezmoi.toml
                      (see docs/setup.md "Adding a customer account"), then
@@ -24,13 +27,46 @@
 {{- $emailEmployer   := promptStringOnce . "email_employer"    "Employer email" $oldEmailWork -}}
 {{- $sshHostEmployer := promptStringOnce . "ssh_host_employer" "SSH host alias for the employer GitHub account" $oldSshWork -}}
 
-{{- $nameEmu         := promptStringOnce . "name_emu"          "Name on the EMU account's commits" $nameEmployer -}}
-{{- $emailEmu        := promptStringOnce . "email_emu"         "EMU account email (leave blank if you don't have one)" "" -}}
-{{- $sshHostEmu      := promptStringOnce . "ssh_host_emu"      "SSH host alias for the EMU account" "github.com-emu" -}}
+{{- /* EMU is opt-in: the email decides whether the rest gets asked at all, so
+       skipping it (blank) doesn't also mean answering two more prompts for
+       nothing -- important on a machine that should never carry that account. */ -}}
+{{- $emailEmu := promptStringOnce . "email_emu" "EMU account email (leave blank if you don't use one on this machine)" "" -}}
+{{- $nameEmu := $nameEmployer -}}
+{{- $sshHostEmu := "" -}}
+{{- if ne $emailEmu "" -}}
+{{- $nameEmu = promptStringOnce . "name_emu" "Name on the EMU account's commits" $nameEmployer -}}
+{{- $sshHostEmu = promptStringOnce . "ssh_host_emu" "SSH host alias for the EMU account" "github.com-emu" -}}
+{{- end -}}
 
-{{- $projectsRoot    := promptStringOnce . "projects_root"     "Projects root directory" "~/projects" -}}
-{{- $employerDirs    := promptStringOnce . "employer_dirs"     "Comma-separated subdirs of the projects root that use the EMPLOYER account" $oldWorkDirs -}}
-{{- $emuDirs         := promptStringOnce . "emu_dirs"          "Comma-separated subdirs that use the EMU account" "emu" -}}
+{{- $projectsRoot := promptStringOnce . "projects_root" "Projects root directory" "~/projects" -}}
+
+{{- /* Auto-discover existing subdirectories of the projects root and fold them
+       into the prompts below as a hint -- it never guesses which account owns
+       which directory, it just saves you typing names from memory. Silently
+       empty on a brand-new machine where the root doesn't exist yet. */ -}}
+{{- $globRoot := $projectsRoot -}}
+{{- if hasPrefix "~/" $globRoot -}}
+{{- $globRoot = joinPath .chezmoi.homeDir (trimPrefix "~/" $globRoot) -}}
+{{- else if eq $globRoot "~" -}}
+{{- $globRoot = .chezmoi.homeDir -}}
+{{- end -}}
+{{- $discoveredDirs := list -}}
+{{- range (glob (printf "%s/*" $globRoot)) -}}
+{{- $name := base . -}}
+{{- if and (stat .).isDir (not (hasPrefix "." $name)) -}}
+{{- $discoveredDirs = mustAppend $discoveredDirs $name -}}
+{{- end -}}
+{{- end -}}
+{{- $dirHint := "" -}}
+{{- if $discoveredDirs -}}
+{{- $dirHint = printf " (found: %s)" ($discoveredDirs | join ", ") -}}
+{{- end -}}
+
+{{- $employerDirs := promptStringOnce . "employer_dirs" (printf "Comma-separated subdirs of the projects root that use the EMPLOYER account%s" $dirHint) $oldWorkDirs -}}
+{{- $emuDirs := "" -}}
+{{- if ne $emailEmu "" -}}
+{{- $emuDirs = promptStringOnce . "emu_dirs" (printf "Comma-separated subdirs that use the EMU account%s" $dirHint) "emu" -}}
+{{- end -}}
 
 [data]
     name_personal     = {{ $namePersonal | quote }}

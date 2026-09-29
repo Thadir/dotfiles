@@ -1,0 +1,8 @@
+# Force LF in the working tree for every text file, regardless of the
+# cloning machine's core.autocrlf. Without this, a Windows/WSL client with
+# autocrlf=true checks the .chezmoiscripts/*.sh.tmpl out with CRLF; chezmoi
+# renders that straight into the executed script, the shebang becomes
+# "#!/bin/sh\r", and the kernel can't find that interpreter — chezmoi reports
+# it as "fork/exec <script>: no such file or directory", which is really a
+# missing-interpreter error one level down.
+* text=auto eol=lf

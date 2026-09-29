@@ -116,9 +116,9 @@ prompts, and applies everything.
 | --- | --- |
 | Personal name / email / SSH host alias | The **default** identity — used for every repo not matched below. |
 | Employer name / email / SSH host alias | Your main corporate identity. |
-| EMU name / email / SSH host alias | A separate Enterprise Managed User account, if your organisation issues one for certain repos. Leave the email blank if you don't have one. |
+| EMU account email | Only account that's genuinely optional. Leave it blank and the name / SSH-host-alias / directory-list prompts for it are **skipped entirely** — this is the one to leave blank on a machine that should never carry it (e.g. a customer-owned box). |
 | Projects root | Where your repos live (default `~/projects`). |
-| Employer dirs / EMU dirs | Comma-separated subdirs of the projects root that use each work account. Everything else uses the personal identity. |
+| Employer dirs / EMU dirs | Comma-separated subdirs of the projects root that use each work account. Everything else uses the personal identity. If the projects root already has subdirectories (existing machine), the prompt lists what it found so you don't have to remember names — it never guesses which account owns which one. On a brand-new machine with nothing cloned yet, there's nothing to find and the prompt is plain. |
 
 Answers are written to `~/.config/chezmoi/chezmoi.toml`. That file is **local
 only** — it is never committed and holds the only copy of your names, emails and
@@ -208,3 +208,22 @@ git -C <a personal repo>  config user.email   # -> personal
 git -C <a work repo>       config user.email   # -> employer / EMU / customer
 git config --show-origin user.email            # shows which .inc supplied it
 ```
+
+<br>
+
+---
+
+<br>
+
+## Troubleshooting
+
+<br>
+
+**`chezmoi: .chezmoiscripts/...sh: fork/exec /tmp/<x>.sh: no such file or
+directory`** — a CRLF-mangled shebang (`#!/bin/sh` followed by `\r`), which the
+kernel reports as a missing interpreter and chezmoi surfaces one level up as a
+missing file. `.gitattributes` forces LF on checkout regardless of the client's
+`core.autocrlf`, so a fresh clone shouldn't hit this — if it still does, your
+git predates `.gitattributes` support or something overrides it; check with
+`git check-attr eol .chezmoiscripts/*.sh.tmpl` (expect `eol: lf`) and
+`file .local/share/chezmoi/.chezmoiscripts/*.sh` (expect no "CRLF").

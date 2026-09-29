@@ -7,5 +7,7 @@
 [github]
 	user = {{ .name_emu }}
 
+{{ if .ssh_host_emu -}}
 [url "git@{{ .ssh_host_emu }}:"]
 	insteadOf = git@github.com:
+{{- end }}
