@@ -54,7 +54,14 @@ else
   unset STARSHIP_PRIV
 fi
 
-eval "$(starship init zsh)"
+# ~/.zsh_profile's dependency check (above) offers to install starship when
+# it's missing, but don't crash the whole shell if it's still not there
+# (declined the prompt, non-interactive shell, install failed, ...).
+if command -v starship >/dev/null 2>&1; then
+  eval "$(starship init zsh)"
+else
+  print -P "%F{yellow}starship not found — using zsh's default prompt. Install it, then open a new shell.%f"
+fi
 
 # --- 6. machine PATH extras ---------------------------------------
 export PATH="/usr/local/sbin:$PATH"
